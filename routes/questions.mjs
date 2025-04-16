@@ -26,4 +26,16 @@ questionsRouter.post("/", async (req, res) => {
   }
 });
 
+// API Endpoint /questions - Get all questions
+questionsRouter.get("/", async (req, res) => {
+  try {
+    // Fetch all questions
+    const data = await connectionPool.query("SELECT * FROM questions");
+    return res.status(200).json(data.rows);
+  } catch (error) {
+    // Handle errors
+    return res.status(500).json({ message: "Unable to fetch questions." });
+  }
+});
+
 export default questionsRouter;
