@@ -61,4 +61,39 @@ questionsRouter.get("/:questionId", async (req, res) => {
   }
 });
 
+// API Endpoint /questions/:questionId - Update a question by ID
+questionsRouter.put("/:questionId", async (req, res) => {
+  try {
+    // Check if all required fields are present
+    if (!req.body.title || !req.body.description || !req.body.category) {
+      return res.status(400).json({ message: "Invalid request data." });
+    }
+
+    // Destructure the request body
+    const { title, description, category } = req.body;
+
+    // Update the question in the database
+    const questionId = req.params.questionId;
+    const data = await connectionPool.query(
+      "UPDATE questions SET title = $1, description = $2, category = $3 WHERE id = $4 RETURNING *",
+      [title, description, category, questionId])
+
+    // Check if the question exists
+    if (data.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+
+    // Return the updated question
+    return res.status(200).json({
+      message: "Question updated successfully.",
+      data: data.rows[0]
+    });
+
+  } catch (error) {
+    // Handle errors
+    return res.status(500).json({ message: "Unable to fetch question." });
+  }
+  
+})
+
 export default questionsRouter;
