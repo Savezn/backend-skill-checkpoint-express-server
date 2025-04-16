@@ -19,7 +19,7 @@ questionsRouter.post("/", async (req, res) => {
       "INSERT INTO questions (title, description, category) VALUES ($1, $2, $3) RETURNING *",
       [title, description, category]
     );
-    return res.status(201).json(data.rows[0]);
+    return res.status(201).json({ message: "Question created successfully.", data: data.rows[0] });
   } catch (error) {
     // Handle errors
     return res.status(500).json({ message: "Unable to create question." });
