@@ -38,4 +38,27 @@ questionsRouter.get("/", async (req, res) => {
   }
 });
 
+// API Endpoint /questions/:questionId - Get a question by ID
+questionsRouter.get("/:questionId", async (req, res) => {
+  try {
+    // Fetch the question by ID
+    const questionId = req.params.questionId;
+    const data = await connectionPool.query(
+      "SELECT * FROM questions WHERE id = $1",
+      [questionId]
+    );
+
+    // Check if the question exists
+    if (data.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+
+    return res.status(200).json(data.rows[0]);
+
+    // Handle errors
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch question." });
+  }
+});
+
 export default questionsRouter;
