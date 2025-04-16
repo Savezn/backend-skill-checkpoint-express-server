@@ -19,7 +19,9 @@ questionsRouter.post("/", async (req, res) => {
       "INSERT INTO questions (title, description, category) VALUES ($1, $2, $3) RETURNING *",
       [title, description, category]
     );
-    return res.status(201).json({ message: "Question created successfully.", data: data.rows[0] });
+    return res
+      .status(201)
+      .json({ message: "Question created successfully.", data: data.rows[0] });
   } catch (error) {
     // Handle errors
     return res.status(500).json({ message: "Unable to create question." });
@@ -42,14 +44,14 @@ questionsRouter.get("/", async (req, res) => {
 questionsRouter.get("/search", async (req, res) => {
   console.log("Search endpoint hit");
   console.log(req.query); // Log the query parameters for debugging
-  
+
   try {
     // Get the search query from the request
     const { title, category } = req.query;
     console.log("title:", title, "category:", category);
 
     // Check if the search query is present
-    if ((!title && !category)) {
+    if (!title && !category) {
       return res.status(400).json({ message: "Invalid search parameters." });
     }
     // Fetch questions based on the search query
@@ -63,13 +65,13 @@ questionsRouter.get("/search", async (req, res) => {
     }
 
     // Return the found questions
-      return res.status(200).json({data: data.rows});
+    return res.status(200).json({ data: data.rows });
   } catch (error) {
     // Handle errors
     console.error(error);
     return res.status(500).json({ message: "Unable to fetch a question." });
   }
-})
+});
 
 // API Endpoint /questions/:questionId - Get a question by ID
 questionsRouter.get("/:questionId", async (req, res) => {
@@ -109,7 +111,8 @@ questionsRouter.put("/:questionId", async (req, res) => {
     const questionId = req.params.questionId;
     const data = await connectionPool.query(
       "UPDATE questions SET title = $1, description = $2, category = $3 WHERE id = $4 RETURNING *",
-      [title, description, category, questionId])
+      [title, description, category, questionId]
+    );
 
     // Check if the question exists
     if (data.rows.length === 0) {
@@ -119,15 +122,13 @@ questionsRouter.put("/:questionId", async (req, res) => {
     // Return the updated question
     return res.status(200).json({
       message: "Question updated successfully.",
-      data: data.rows[0]
+      data: data.rows[0],
     });
-
   } catch (error) {
     // Handle errors
     return res.status(500).json({ message: "Unable to fetch question." });
   }
-  
-})
+});
 
 // API Endpoint /questions/:questionId - Delete a question by ID
 questionsRouter.delete("/:questionId", async (req, res) => {
@@ -143,16 +144,49 @@ questionsRouter.delete("/:questionId", async (req, res) => {
     if (data.rows.length === 0) {
       return res.status(404).json({ message: "Question not found." });
     }
-    
+
     // Return a success message
-    return res.status(200).json({ message: "Question deleted successfully." }
-    );
+    return res.status(200).json({ message: "Question deleted successfully." });
   } catch (error) {
     // Handle errors
     return res.status(500).json({ message: "Unable to delete question." });
   }
 });
 
+// API Endpoint /questions/:questionId/answers - Create an answer for a question
+questionsRouter.post("/:questionId/answers", async (req, res) => {
+  try {
+    // Check if all required fields are present
+    if (!req.body.content) {
+      return res.status(400).json({ message: "Invalid request data." });
+    }
 
+    // Destructure the request body
+    const { content } = req.body;
+    const questionId = req.params.questionId;
+
+    // Check if the question exists
+    const questionData = await connectionPool.query(
+      "SELECT * FROM questions WHERE id = $1",
+      [questionId]
+    );
+    if (questionData.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+
+    // Insert the content into the database
+    const data = await connectionPool.query(
+      "INSERT INTO answers (question_id, content) VALUES ($1, $2) RETURNING *",
+      [questionId, content]
+    );
+
+    return res
+      .status(201)
+      .json({ message: "Answer created successfully.", data: data.rows[0] });
+  } catch (error) {
+    // Handle errors
+    return res.status(500).json({ message: "Unable to create answer." });
+  }
+});
 
 export default questionsRouter;
