@@ -212,4 +212,27 @@ questionsRouter.get("/:questionId/answers", async (req, res) => {
   }
 });
 
+// API Endpoint "/questions/:questionId/answers" - Delete answers for a question
+questionsRouter.delete("/:questionId/answers", async (req, res) => {
+  try {
+    // Fetch the question by ID
+    const questionId = req.params.questionId;
+    const data = await connectionPool.query(
+      "DELETE FROM answers WHERE question_id = $1 RETURNING *",
+      [questionId]
+    );
+
+    // Check if the question exists
+    if (data.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+
+    // Return a success message
+    return res.status(200).json({ message: "All answers for the question have been deleted successfully." });
+  } catch (error) {
+    // Handle errors
+    return res.status(500).json({ message: "Unable to delete answers." });
+  }
+});
+
 export default questionsRouter;
