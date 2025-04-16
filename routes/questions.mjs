@@ -38,6 +38,39 @@ questionsRouter.get("/", async (req, res) => {
   }
 });
 
+// API Endpoint /questions/search - Search questions by title or category
+questionsRouter.get("/search", async (req, res) => {
+  console.log("Search endpoint hit");
+  console.log(req.query); // Log the query parameters for debugging
+  
+  try {
+    // Get the search query from the request
+    const { title, category } = req.query;
+    console.log("title:", title, "category:", category);
+
+    // Check if the search query is present
+    if ((!title && !category)) {
+      return res.status(400).json({ message: "Invalid search parameters." });
+    }
+    // Fetch questions based on the search query
+    const data = await connectionPool.query(
+      "SELECT * FROM questions WHERE (title ILIKE $1 OR $1 IS NULL OR $1 = '') AND (category ILIKE $2 OR $2 IS NULL OR $2 = '')",
+      [`%${title}%`, `%${category}%`]
+    );
+    // Check if any questions were found
+    if (data.rows.length === 0) {
+      return res.status(404).json({ message: "No questions found." });
+    }
+
+    // Return the found questions
+      return res.status(200).json({data: data.rows});
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    return res.status(500).json({ message: "Unable to fetch a question." });
+  }
+})
+
 // API Endpoint /questions/:questionId - Get a question by ID
 questionsRouter.get("/:questionId", async (req, res) => {
   try {
@@ -119,6 +152,7 @@ questionsRouter.delete("/:questionId", async (req, res) => {
     return res.status(500).json({ message: "Unable to delete question." });
   }
 });
+
 
 
 export default questionsRouter;
