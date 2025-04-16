@@ -235,4 +235,42 @@ questionsRouter.delete("/:questionId/answers", async (req, res) => {
   }
 });
 
+// API Endpoint "/questions/:questionId/vote" - Vote on a question
+questionsRouter.post("/:questionId/vote", async (req, res) => {
+  try {
+    // Check if all required fields are present
+    if (!req.body.vote) {
+      return res.status(400).json({ message: "Invalid vote value." });
+    }
+
+    // Destructure the request body
+    const { vote } = req.body;
+    const questionId = req.params.questionId;
+
+    // Check if the question exists
+    const questionData = await connectionPool.query(
+      "SELECT * FROM question_votes WHERE question_id = $1",
+      [questionId]
+    );
+    if (questionData.rows.length === 0) {
+      return res.status(404).json({ message: "Question not found." });
+    }
+
+    // Update the vote count in the database
+    const data = await connectionPool.query(
+      "UPDATE question_votes SET vote = $1 WHERE question_id = $2 RETURNING *",
+      [vote, questionId]
+    );
+
+    // Return the updated vote count
+    return res.status(200).json({
+      message: "Vote updated successfully.",
+      data: data.rows[0],
+    });
+  } catch (error) {
+    // Handle errors
+    return res.status(500).json({ message: "Unable to vote question." });
+  }
+});
+
 export default questionsRouter;
